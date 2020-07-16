@@ -4,6 +4,7 @@ const firebase = require('firebase');
 firebase.initializeApp(config);
 
 exports.signup = (req, res) => {
+	// console.log(req);
 	const newUser = {
 		email    : req.body.email,
 		password : req.body.password,

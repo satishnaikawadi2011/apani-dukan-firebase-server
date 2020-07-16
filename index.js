@@ -1,9 +1,11 @@
 const functions = require('firebase-functions');
 const express = require('express');
 const auth = require('./utils/auth');
+const bodyParser = require('body-parser');
 const cors = require('cors');
 const { db } = require('./utils/admin');
 
+const userRouter = require('./routes/users');
 const { signup, login } = require('./handlers/users');
 const {
 	getAllProducts,
@@ -21,15 +23,18 @@ const {
 const { clearCart } = require('../../server/controllers/product-controllers');
 
 const app = express();
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 app.use(cors());
 
 // -----------------------------------------------------------------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
-app.post('/signup', signup);
+// app.post('/signup', signup);
 
-// login route
-app.post('/login', login);
+// // login route
+// app.post('/login', login);
+app.use('/api/users', userRouter);
 
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 // --------------------------------------------------------------------------------------------------------------------------------------------------
@@ -61,4 +66,8 @@ app.delete('/products/:productId', auth, deleteProductById);
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 
-exports.api = functions.https.onRequest(app);
+// exports.api = functions.https.onRequest(app);
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
