@@ -3,14 +3,17 @@ const express = require('express');
 const auth = require('./utils/auth');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const { db } = require('./utils/admin');
+const path = require('path');
+const os = require('os');
+const { db, admin } = require('./utils/admin');
+const config = require('./utils/config');
+const fileUpload = require('./middlewares/file-upload');
 
 const userRouter = require('./routes/users');
 const { signup, login } = require('./handlers/users');
 const {
 	getAllProducts,
 	createProduct,
-	uploadImage,
 	addToCart,
 	removeFromCart,
 	getMyProducts,
@@ -44,7 +47,7 @@ app.use('/api/users', userRouter);
 
 app.post('/product', auth, createProduct);
 
-app.post('/product/:productId/upload', auth, uploadImage);
+// app.post('/product/:productId/upload', auth, uploadImage);
 
 app.post('/product/:productId/addToCart', auth, addToCart);
 
@@ -63,6 +66,32 @@ app.get('/me/cart', auth, getMyCart);
 app.patch('/product/:productId/update', auth, updateProductById);
 
 app.delete('/products/:productId', auth, deleteProductById);
+
+app.post('/products/:productId/upload', auth, fileUpload.single('image'), (req, res) => {
+	admin
+		.storage()
+		.bucket(config.storageBucket)
+		.upload(req.file.path, {
+			resumable : false,
+			metadata  : {
+				metadata : {
+					contentType : req.file.mimetype
+				}
+			}
+		})
+		.then(() => {
+			const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/${req.file
+				.filename}?alt=media`;
+			return db.doc(`/products/${req.params.productId}`).update({ imageUrl });
+		})
+		.then(() => {
+			res.json({ message: 'Image uploaded successfully !!' });
+		})
+		.catch((err) => {
+			console.error(err);
+			return res.status(500).json({ error: err.code });
+		});
+});
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 // ------------------------------------------------------------------------------------------------------------------------------------------------------
 
